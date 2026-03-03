@@ -1,0 +1,372 @@
+{
+  "houses": [
+    {
+      "id": 1772350548684,
+      "name": "RED",
+      "color": "#fb1713",
+      "points": 12,
+      "boysCaptain": {
+        "name": "Rajesh E"
+      },
+      "staffCaptainMale": {
+        "name": "SKAD",
+        "img": null
+      },
+      "staffCaptainFemale": {
+        "name": "AdS X",
+        "img": null
+      }
+    },
+    {
+      "id": 1772350586730,
+      "name": "PURPLE",
+      "color": "#c301f9",
+      "points": 15,
+      "boysCaptain": {
+        "name": "Kishore R",
+        "email": "kishore.r.cseacet@gmail.com",
+        "password": "admin"
+      },
+      "staffCaptainMale": {
+        "name": "",
+        "img": null
+      },
+      "staffCaptainFemale": {
+        "name": "",
+        "img": null
+      }
+    },
+    {
+      "id": 1772350613320,
+      "name": "YELLOW",
+      "color": "#ffb805",
+      "points": 9,
+      "boysCaptain": {
+        "name": "Rajaseelan R"
+      },
+      "staffCaptainMale": {
+        "name": "Mr. John",
+        "img": null
+      },
+      "staffCaptainFemale": {
+        "name": "Ms. Mary",
+        "img": null
+      }
+    },
+    {
+      "id": 1772350665891,
+      "name": "GREEN",
+      "color": "#04fb10",
+      "points": 0,
+      "boysCaptain": {
+        "name": "Sriram V"
+      },
+      "staffCaptainMale": {
+        "name": "",
+        "img": null
+      },
+      "staffCaptainFemale": {
+        "name": "",
+        "img": null
+      }
+    }
+  ],
+  "authorities": [
+    {
+      "role": "Physical Education Director",
+      "name": "Dr.E. Kumaressan",
+      "designation": "",
+      "email": "",
+      "img": null,
+      "priority": 1
+    },
+    {
+      "role": "Physical Education Director",
+      "name": "Mr.Praveen Raj",
+      "designation": "",
+      "email": "",
+      "img": null,
+      "priority": 1
+    }
+  ],
+  "management": [
+    {
+      "role": "Dean",
+      "name": "Tr.Aravindhan",
+      "designation": "",
+      "email": "",
+      "img": null,
+      "priority": 0
+    },
+    {
+      "role": "Principal",
+      "name": "Dr.S.Gurulingam",
+      "designation": "",
+      "email": "",
+      "img": null,
+      "priority": 1
+    }
+  ],
+  "studentCommittee": [
+    {
+      "role": "Sports Secretary",
+      "name": "Kishol",
+      "designation": "IV - CSE",
+      "email": "",
+      "img": null,
+      "priority": 1
+    },
+    {
+      "role": "Joint Secretary",
+      "name": "AlexAlex",
+      "designation": "III - IT",
+      "email": "",
+      "img": null,
+      "priority": 1
+    }
+  ],
+  "games": [],
+  "gallery": [],
+  "registrations": [
+    {
+      "sno": "1",
+      "name": "Kishore.R",
+      "email": "kishore.r.cseacet@gmail.com",
+      "regNo": "22TD0550",
+      "house": "red",
+      "year": "IV",
+      "shirtSize": "m",
+      "gender": "male",
+      "shirtIssued": false,
+      "game": "Football",
+      "athletic": "javlin",
+      "registeredAt": "1:15:01 pm"
+    }
+  ],
+  "pointLog": [
+    {
+      "type": "win",
+      "house": "PURPLE",
+      "reason": "1st Place - relay",
+      "pts": 3,
+      "time": "10:25 am"
+    },
+    {
+      "type": "win",
+      "house": "RED",
+      "reason": "2nd Place - relay",
+      "pts": 2,
+      "time": "10:25 am"
+    },
+    {
+      "type": "win",
+      "house": "YELLOW",
+      "reason": "3rd Place - relay",
+      "pts": 1,
+      "time": "10:25 am"
+    },
+    {
+      "type": "win",
+      "house": "PURPLE",
+      "reason": "1st Place - Football",
+      "pts": 7,
+      "time": "10:24 am"
+    },
+    {
+      "type": "win",
+      "house": "YELLOW",
+      "reason": "2nd Place - Football",
+      "pts": 5,
+      "time": "10:24 am"
+    },
+    {
+      "type": "win",
+      "house": "RED",
+      "reason": "3rd Place - Football",
+      "pts": 3,
+      "time": "10:24 am"
+    },
+    {
+      "type": "win",
+      "house": "RED",
+      "reason": "1st Place - chess",
+      "pts": 7,
+      "time": "10:18 am"
+    },
+    {
+      "type": "win",
+      "house": "PURPLE",
+      "reason": "2nd Place - chess",
+      "pts": 5,
+      "time": "10:18 am"
+    },
+    {
+      "type": "win",
+      "house": "YELLOW",
+      "reason": "3rd Place - chess",
+      "pts": 3,
+      "time": "10:18 am"
+    }
+  ],
+  "studentsDB": [
+    {
+      "sno": "1",
+      "name": "Kishore.R",
+      "email": "kishore.r.cseacet@gmail.com",
+      "regNo": "22TD0550",
+      "house": "red",
+      "year": "IV",
+      "shirtSize": "m",
+      "gender": "male",
+      "shirtIssued": false
+    },
+    {
+      "sno": "2",
+      "name": "prasath.s",
+      "email": "prasath.s.cseacet@gmail.com",
+      "regNo": "23td0569",
+      "house": "green",
+      "year": "III",
+      "shirtSize": "m",
+      "gender": "male",
+      "shirtIssued": false
+    },
+    {
+      "sno": "3",
+      "name": "jeevan.r.p",
+      "email": "jeevanpvt14@gmail.com",
+      "regNo": "23td0533",
+      "house": "blue",
+      "year": "III",
+      "shirtSize": "m",
+      "gender": "male",
+      "shirtIssued": false
+    },
+    {
+      "sno": "4",
+      "name": "vignesh.r",
+      "email": "vigneshraja17vpy@gmail.com",
+      "regNo": "23td0613",
+      "house": "purple",
+      "year": "III",
+      "shirtSize": "m",
+      "gender": "male",
+      "shirtIssued": true
+    }
+  ],
+  "results": [
+    {
+      "eventName": "relay",
+      "eventType": "athletic",
+      "time": "2/3/2026, 10:25:52 am",
+      "placements": {
+        "first": {
+          "house": "PURPLE",
+          "player": "koshik"
+        },
+        "second": {
+          "house": "RED",
+          "player": "kishol"
+        },
+        "third": {
+          "house": "YELLOW",
+          "player": "gokul"
+        }
+      }
+    },
+    {
+      "eventName": "Football",
+      "eventType": "game",
+      "time": "2/3/2026, 10:24:25 am",
+      "placements": {
+        "first": {
+          "house": "PURPLE",
+          "player": "Kishore"
+        },
+        "second": {
+          "house": "YELLOW",
+          "player": "Gokul"
+        },
+        "third": {
+          "house": "RED",
+          "player": "Kishol"
+        }
+      }
+    },
+    {
+      "eventName": "chess",
+      "eventType": "game",
+      "time": "2/3/2026, 10:18:38 am",
+      "placements": {
+        "first": {
+          "house": "RED",
+          "player": "kishol"
+        },
+        "second": {
+          "house": "PURPLE",
+          "player": "kishore"
+        },
+        "third": {
+          "house": "YELLOW",
+          "player": "gokul"
+        }
+      }
+    }
+  ],
+  "sportGamesList": [
+    "Football",
+    "chess",
+    "carrom",
+    "badmation",
+    "pickleball",
+    "table tennis",
+    "cricket",
+    "Kabadi"
+  ],
+  "athleticsList": [
+    "100 m",
+    "200m",
+    "400m",
+    "relay",
+    "javlin",
+    "highjump",
+    "shortput"
+  ],
+  "authorityRoles": [
+    "Physical Education Director",
+    "Sports Secretary",
+    "Sports Official",
+    "Coach",
+    "Referee"
+  ],
+  "managementRoles": [
+    "Principal",
+    "Vice Principal",
+    "HOD",
+    "Dean",
+    "Director"
+  ],
+  "nav": [
+    "Home",
+    "Events",
+    "Registration",
+    "Scoreboard",
+    "Gallery",
+    "Captain",
+    "Admin"
+  ],
+  "eventDate": {
+    "date": "",
+    "time": ""
+  },
+  "emptyGame": {
+    "name": "",
+    "type": "game",
+    "venue": "",
+    "official": "",
+    "status": "Upcoming",
+    "start": "",
+    "end": "",
+    "participants": ""
+  }
+}
