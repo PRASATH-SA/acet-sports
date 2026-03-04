@@ -437,7 +437,7 @@ app.post("/api/send-captain-email", authenticateAdmin, async (req, res) => {
 });
 
 app.post("/api/send-event-announcement", authenticateAdmin, async (req, res) => {
-  const { date, time, portalUrl, authorities = [], studentsDB = [] } = req.body;
+  const { date, time, portalUrl, authorities = [], studentsDB = [], invitationFile, invitationFileName, regardsNames } = req.body;
 
   if (!date) {
     return res.status(400).json({ error: "Date is required." });
@@ -502,10 +502,20 @@ app.post("/api/send-event-announcement", authenticateAdmin, async (req, res) => 
             Don't forget to register for your events and track your house's progress on the official Sports Day portal.
           </p>
           
-          <div style="text-align:center;">
+          <div style="text-align:center; padding-bottom: 24px; border-bottom: 1px solid #eee;">
             <a href="${portalUrl}" style="display:inline-block;background:linear-gradient(135deg,#FFD700,#FFA500);color:#000;text-decoration:none;padding:16px 40px;border-radius:50px;font-size:16px;font-weight:800;letter-spacing:1px;box-shadow:0 8px 24px rgba(255,215,0,.4);">
               Go to Sports Portal 🏃‍♂️
             </a>
+          </div>
+
+          <div style="margin-top: 24px; text-align: left;">
+            <p style="font-size:16px; color:#222; font-weight:600; margin-bottom:12px;">
+              Invited by the Department of Physical Education and Training.
+            </p>
+            <p style="font-size:15px; color:#444; margin-top:0;">
+              With regards,<br/><br/>
+              <strong>${regardsNames}</strong>
+            </p>
           </div>
         </td></tr>
         
@@ -520,14 +530,25 @@ app.post("/api/send-event-announcement", authenticateAdmin, async (req, res) => 
 </html>`;
 
   try {
-    // Send using BCC to protect privacy
-    await transporter.sendMail({
+    // Configure attachments if an invitation file is provided
+    const mailOptions = {
       from: `"ACET Sports Authority" <${process.env.SMTP_USER}>`,
       to: process.env.SMTP_USER, // Send to self
       bcc: uniqueEmails.join(","),
       subject: `🏆 Official Sports Day Schedule Announced!`,
       html: htmlTemplate,
-    });
+    };
+
+    if (invitationFile && invitationFileName) {
+      mailOptions.attachments = [
+        {
+          filename: invitationFileName,
+          path: invitationFile // Nodemailer accepts Data URIs (Base64) directly in the path
+        }
+      ];
+    }
+
+    await transporter.sendMail(mailOptions);
 
     console.log(`✅ Global announcement sent to ${uniqueEmails.length} users.`);
     res.json({ success: true, message: `Announcement sent to ${uniqueEmails.length} users.` });

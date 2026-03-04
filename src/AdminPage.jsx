@@ -47,6 +47,8 @@ export function AdminPage({
     const xlInputRef = useRef();
     const [emailStatus, setEmailStatus] = useState({}); // key: `${houseId}-${captainKey}` → idle|sending|sent|error
     const [announcementStatus, setAnnouncementStatus] = useState("idle"); // idle|sending|sent|error
+    const [invitationFile, setInvitationFile] = useState(null);
+    const [invitationFileName, setInvitationFileName] = useState("");
     const [portalUrl, setPortalUrl] = useState(window.location.origin);
     const [confirmDelete, setConfirmDelete] = useState(null);
 
@@ -181,7 +183,10 @@ export function AdminPage({
                     time: eventDate.time,
                     portalUrl,
                     authorities: [...authorities, ...management],
-                    studentsDB
+                    studentsDB,
+                    invitationFile,
+                    invitationFileName,
+                    regardsNames: authorities.map(a => a.name).join(", ")
                 }),
             });
             const data = await res.json();
@@ -1330,22 +1335,39 @@ export function AdminPage({
                                 </div>
                             </div>
 
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${dark ? "#333" : "#eee"}`, paddingTop: 16, marginTop: 10 }}>
-                                <div style={{ flex: 1, paddingRight: 16 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: dark ? "#ddd" : "#333", marginBottom: 4 }}>Send Official Announcement</div>
-                                    <div style={{ fontSize: 11, color: dark ? "#888" : "#777" }}>Broadcasts this schedule and unique portal links to all students, management, and authorities.</div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 12, borderTop: `1px solid ${dark ? "#333" : "#eee"}`, paddingTop: 16, marginTop: 10 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                                    <div style={{ flex: 1, paddingRight: 16 }}>
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: dark ? "#ddd" : "#333", marginBottom: 4 }}>Send Official Announcement</div>
+                                        <div style={{ fontSize: 11, color: dark ? "#888" : "#777", marginBottom: 10 }}>Broadcasts this schedule and unique portal links to all students, management, and authorities.</div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                            <label style={{ background: dark ? "rgba(255,255,255,.1)" : "#f0f0f0", color: dark ? "#fff" : "#333", padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "inline-block", border: `1px solid ${dark ? "#444" : "#ccc"}` }}>
+                                                📎 Attach Invitation (PDF/Image)
+                                                <input type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={(e) => {
+                                                    const file = e.target.files[0];
+                                                    if (!file) return;
+                                                    setInvitationFileName(file.name);
+                                                    const reader = new FileReader();
+                                                    reader.onload = (ev) => setInvitationFile(ev.target.result);
+                                                    reader.readAsDataURL(file);
+                                                }} />
+                                            </label>
+                                            {invitationFileName && <span style={{ fontSize: 11, color: dark ? "#aaa" : "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 150 }} title={invitationFileName}>{invitationFileName}</span>}
+                                            {invitationFileName && <button onClick={() => { setInvitationFile(null); setInvitationFileName(""); }} style={{ background: "none", border: "none", color: "#c00", cursor: "pointer", fontSize: 14 }}>✖</button>}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={sendAnnouncementEmail}
+                                        disabled={announcementStatus === "sending"}
+                                        style={{
+                                            background: announcementStatus === "sent" ? "#2E8B57" : announcementStatus.startsWith("error") ? "#c00" : "#8B0000",
+                                            color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", cursor: announcementStatus === "sending" ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", alignSelf: "center"
+                                        }}>
+                                        {announcementStatus === "sending" ? "⏳ Sending..." : announcementStatus === "sent" ? "✅ Sent!" : announcementStatus.startsWith("error") ? "❌ Error" : "📢 Broadcast Email"}
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={sendAnnouncementEmail}
-                                    disabled={announcementStatus === "sending"}
-                                    style={{
-                                        background: announcementStatus === "sent" ? "#2E8B57" : announcementStatus.startsWith("error") ? "#c00" : "#8B0000",
-                                        color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", cursor: announcementStatus === "sending" ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap"
-                                    }}>
-                                    {announcementStatus === "sending" ? "⏳ Sending to All..." : announcementStatus === "sent" ? "✅ All Emails Sent!" : announcementStatus.startsWith("error") ? "❌ Error Sending" : "📢 Broadcast Email"}
-                                </button>
+                                {announcementStatus.startsWith("error:") && <div style={{ fontSize: 11, color: "#ff4444", marginTop: 4, textAlign: "right" }}>{announcementStatus.replace("error:", "")}</div>}
                             </div>
-                            {announcementStatus.startsWith("error:") && <div style={{ fontSize: 11, color: "#ff4444", marginTop: 8, textAlign: "right" }}>{announcementStatus.replace("error:", "")}</div>}
                         </div>
 
                         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, alignItems: "start" }}>
