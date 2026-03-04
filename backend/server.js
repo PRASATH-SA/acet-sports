@@ -124,28 +124,41 @@ function makeTransporter() {
   });
 }
 
+// ─── Single Admin Session Tracking ───────────────────────────────────────────
+let activeAdminToken = null;
+
 // ─── Middleware ────────────────────────────────────────────────────────────
 const authenticateAdmin = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "No token provided" });
+  if (token !== activeAdminToken) return res.status(401).json({ error: "Session expired. Another admin has logged in." });
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     if (decoded.role !== "admin") return res.status(403).json({ error: "Access denied" });
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(401).json({ error: "Invalid token" });
+    if (token === activeAdminToken) activeAdminToken = null; // Clear if it was the active one but expired
+    res.status(401).json({ error: "Invalid or expired token" });
   }
 };
 
 const authenticateCaptainOrAdmin = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "No token provided" });
+
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (decoded.role !== "admin" && decoded.role !== "captain") return res.status(403).json({ error: "Access denied" });
-    req.user = decoded;
-    next();
+    if (decoded.role === "admin") {
+      if (token !== activeAdminToken) return res.status(401).json({ error: "Session expired. Another admin has logged in." });
+      req.user = decoded;
+      return next();
+    }
+    if (decoded.role === "captain") {
+      req.user = decoded;
+      return next();
+    }
+    return res.status(403).json({ error: "Access denied" });
   } catch (err) {
     res.status(401).json({ error: "Invalid token" });
   }
@@ -200,8 +213,23 @@ app.post("/api/update-state", authenticateCaptainOrAdmin, async (req, res) => {
       return res.status(403).json({ error: "Captains can only update T-shirt issuance." });
     }
 
+    // Prepare update payload
+    let updatePayload = { [type]: data };
+
+    // Audit Log for Admin Changes
+    if (req.user.role === "admin" && req.user.name) {
+      updatePayload.$push = {
+        adminLogs: {
+          type: "CHANGE",
+          name: req.user.name,
+          action: `Updated configuration: ${type}`,
+          timestamp: new Date()
+        }
+      };
+    }
+
     // Atomic update in MongoDB
-    await State.findOneAndUpdate({}, { [type]: data }, { upsert: true });
+    await State.findOneAndUpdate({}, updatePayload, { upsert: true });
     invalidateCache(); // clear state cache so next fetch gets fresh data
     res.json({ success: true });
   } catch (err) {
@@ -255,11 +283,27 @@ app.post("/api/verify-otp", (req, res) => {
   res.json({ success: true });
 });
 
-app.post("/api/admin-login", loginLimiter, (req, res) => {
-  const { password } = req.body;
-  const adminPass = process.env.ADMIN_PASSWORD || "admin123";
+app.post("/api/admin-login", loginLimiter, async (req, res) => {
+  const { password, name } = req.body;
+  if (!name || name.trim() === "") return res.status(400).json({ success: false, error: "Admin Name is required" });
+
+  const adminPass = process.env.ADMIN_PASSWORD || "AcEt@sports";
   if (password === adminPass) {
-    const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "12h" });
+    const token = jwt.sign({ role: "admin", name: name.trim() }, JWT_SECRET, { expiresIn: "12h" });
+    activeAdminToken = token; // Single session enforcement
+
+    // Log login to DB
+    await State.findOneAndUpdate({}, {
+      $push: {
+        adminLogs: {
+          type: "LOGIN",
+          name: name.trim(),
+          action: "Admin Logged In",
+          timestamp: new Date()
+        }
+      }
+    }, { upsert: true });
+
     res.json({ success: true, token });
   } else {
     res.status(401).json({ success: false, error: "Invalid admin password" });
@@ -582,6 +626,32 @@ app.post("/api/upload-image", authenticateAdmin, async (req, res) => {
   } catch (err) {
     console.error("Cloudinary upload error:", err.message);
     res.status(500).json({ error: "Image upload failed: " + err.message });
+  }
+});
+
+// ─── Admin Audit Logs Export ─────────────────────────────────────────────────
+app.get("/api/download-admin-logs", authenticateAdmin, async (req, res) => {
+  try {
+    const state = await loadDb();
+    const logs = state.adminLogs || [];
+
+    // Convert to CSV
+    let csvContent = "Timestamp,Type,Admin Name,Action\n";
+    logs.forEach(log => {
+      // Escape commas and quotes for CSV body
+      const ts = log.timestamp ? new Date(log.timestamp).toLocaleString().replace(/,/g, '') : "N/A";
+      const type = log.type || "UNKNOWN";
+      const name = (log.name || "Unknown").replace(/"/g, '""');
+      const action = (log.action || "No description").replace(/"/g, '""');
+
+      csvContent += `${ts},${type},"${name}","${action}"\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="admin-audit-logs.csv"');
+    res.send(csvContent);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to generate logs" });
   }
 });
 

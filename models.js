@@ -18,6 +18,7 @@ const stateSchema = new mongoose.Schema({
     nav: { type: Array, default: [] },
     eventDate: { type: Object, default: { date: "", time: "" } },
     emptyGame: { type: Object, default: {} },
+    adminLogs: { type: Array, default: [] },
 }, {
     timestamps: true,
     // This ensures that Mongoose doesn't strip out fields not explicitly defined in the schema if we decide to add more later

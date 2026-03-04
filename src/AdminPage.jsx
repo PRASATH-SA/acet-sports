@@ -18,6 +18,7 @@ export function AdminPage({
 }) {
     const [loggedIn, setLoggedIn] = useState(false);
     const [loginError, setLoginError] = useState("");
+    const [adminName, setAdminName] = useState("");
     const [pw, setPw] = useState("");
     const [tab, setTab] = useState("Gallery");
     const [exportType, setExportType] = useState("All");
@@ -102,11 +103,15 @@ export function AdminPage({
 
     const handleLogin = async () => {
         setLoginError("");
+        if (!adminName.trim()) {
+            setLoginError("Admin Name is required");
+            return;
+        }
         try {
             const res = await fetch(`${API_BASE}/api/admin-login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password: pw })
+                body: JSON.stringify({ password: pw, name: adminName.trim() })
             });
             const data = await res.json();
             if (data.success) {
@@ -471,9 +476,10 @@ export function AdminPage({
         <div style={{ maxWidth: 400, margin: isMobile ? "24px auto" : "80px auto", padding: isMobile ? "16px 14px" : "40px 20px" }}>
             <div style={{ textAlign: "center", marginBottom: 20 }}><div style={{ fontSize: 48 }}>🔐</div><h2 style={{ fontFamily: "'Georgia',serif", color: dark ? "#fff" : "#8B0000", fontSize: isMobile ? 20 : 24 }}>Admin Login</h2></div>
             <div style={cS}>
+                <input type="text" value={adminName} onChange={e => setAdminName(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} placeholder="Enter your Name" style={{ ...iS, marginBottom: 12 }} />
                 <input type="password" value={pw} onChange={e => setPw(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} placeholder="Enter admin password" style={{ ...iS, marginBottom: 8 }} />
                 {loginError && <div style={{ color: "#c00", fontSize: 13, marginBottom: 10, fontWeight: 600 }}>⚠ {loginError}</div>}
-                <div style={{ fontSize: 12, color: dark ? "#666" : "#aaa", marginBottom: 14 }}>Default: admin123</div>
+                <div style={{ fontSize: 12, color: dark ? "#666" : "#aaa", marginBottom: 14 }}>Default: AcEt@sports</div>
                 <button onClick={handleLogin} style={{ width: "100%", background: "#8B0000", color: "#fff", border: "none", borderRadius: 8, padding: "14px 0", cursor: "pointer", fontWeight: 700, fontSize: 16 }}>Login</button>
             </div>
         </div>
@@ -1367,6 +1373,41 @@ export function AdminPage({
                                     </button>
                                 </div>
                                 {announcementStatus.startsWith("error:") && <div style={{ fontSize: 11, color: "#ff4444", marginTop: 4, textAlign: "right" }}>{announcementStatus.replace("error:", "")}</div>}
+                            </div>
+
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${dark ? "#333" : "#eee"}`, paddingTop: 16, marginTop: 10 }}>
+                                <div style={{ flex: 1, paddingRight: 16 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: dark ? "#ddd" : "#333", marginBottom: 4 }}>Audit Logs</div>
+                                    <div style={{ fontSize: 11, color: dark ? "#888" : "#777" }}>Download a CSV record of all Admin logins and data configuration changes.</div>
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            const token = localStorage.getItem("adminToken");
+                                            const res = await fetch(`${API_BASE}/api/download-admin-logs`, {
+                                                headers: { "Authorization": `Bearer ${token}` }
+                                            });
+                                            if (!res.ok) {
+                                                if (res.status === 401) return alert("Session expired. Please log in again.");
+                                                throw new Error("Failed to download logs");
+                                            }
+                                            const blob = await res.blob();
+                                            const url = window.URL.createObjectURL(blob);
+                                            const a = document.createElement("a");
+                                            a.href = url;
+                                            a.download = "admin-audit-logs.csv";
+                                            document.body.appendChild(a);
+                                            a.click();
+                                            a.remove();
+                                        } catch (e) {
+                                            alert("Download error: " + e.message);
+                                        }
+                                    }}
+                                    style={{
+                                        background: "#4A90E2", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", cursor: "pointer", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap"
+                                    }}>
+                                    📥 Download Audit Logs (CSV)
+                                </button>
                             </div>
                         </div>
 
