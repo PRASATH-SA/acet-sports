@@ -7,7 +7,12 @@ import { AdminPage } from "./AdminPage.jsx";
 import { CaptainPortal } from "./CaptainPortal.jsx";
 
 export default function App() {
-  const [active, setActive] = useState("Home");
+  const [active, setActive] = useState(() => {
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes("/admin")) return "Admin";
+    if (path.includes("/captain")) return "Captain";
+    return "Home";
+  });
   const [dark, setDark] = useState(false);
   const [houses, setHouses] = useState([]);
   const [authorities, setAuthorities] = useState([]);
@@ -136,7 +141,10 @@ export default function App() {
         select option { background: ${dark ? "#1a1a2e" : "#fff"}; color: ${dark ? "#fff" : "#222"}; }
       `}</style>
 
-      <Header active={active} setActive={setActive} dark={dark} setDark={setDark} nav={nav} games={games} />
+      <Header active={active} setActive={(tab) => {
+        window.history.pushState({}, "", tab === "Home" ? "/" : `/${tab.toLowerCase()}`);
+        setActive(tab);
+      }} dark={dark} setDark={setDark} nav={nav.filter(n => n !== "Admin" && n !== "Captain")} games={games} />
 
       <main>
         {active === "Home" && <HomePage dark={dark} houses={houses} authorities={authorities} management={management} studentCommittee={studentCommittee} games={games} gallery={gallery} eventDate={eventDate} />}
@@ -167,7 +175,7 @@ export default function App() {
         {active === "Captain" && <CaptainPortal dark={dark} houses={houses} registrations={registrations} studentsDB={studentsDB} setStudentsDB={setStudentsDBSync} />}
       </main>
 
-      <Footer dark={dark} nav={nav} houses={houses} />
+      <Footer dark={dark} nav={nav.filter(n => n !== "Admin" && n !== "Captain")} houses={houses} />
     </div>
   );
 }
