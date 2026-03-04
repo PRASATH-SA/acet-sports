@@ -66,7 +66,12 @@ mongoose.connect(MONGODB_URI)
 
 // ─── Database Helpers ──────────────────────────────────────────────────────
 const getInitialState = () => ({
-  houses: [],
+  houses: [
+    { id: 1, name: "RED", color: "#DC2626", points: 0 },
+    { id: 2, name: "GREEN", color: "#16A34A", points: 0 },
+    { id: 3, name: "PURPLE", color: "#7C3AED", points: 0 },
+    { id: 4, name: "YELLOW", color: "#CA8A04", points: 0 },
+  ],
   authorities: [],
   management: [],
   studentCommittee: [],
@@ -84,6 +89,7 @@ const getInitialState = () => ({
   eventDate: { date: "", time: "" },
   emptyGame: { name: "", venue: "", official: "", status: "Upcoming", start: "", end: "", participants: "" },
 });
+
 
 const loadDb = async () => {
   let state = await State.findOne();
