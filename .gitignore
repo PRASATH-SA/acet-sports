@@ -1,3 +1,7 @@
+# Environment variables (contains passwords & API keys — NEVER commit this!)
+.env
+.env.*
+
 # Logs
 logs
 *.log

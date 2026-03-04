@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { useIsMobile, hi, tint, Sheet } from "./utils.jsx";
 import { ImgUploadBtn } from "./ImgUploadBtn.jsx";
+import { API_BASE } from "./api.js";
 import * as XLSX from "xlsx";
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel, BorderStyle } from "docx";
 import { saveAs } from "file-saver";
@@ -37,6 +38,7 @@ export function AdminPage({
     const galleryInputRef = useRef();
     const [galForm, setGalForm] = useState({ category: "current", label: "" });
     const [galFile, setGalFile] = useState(null);
+    const [galUploading, setGalUploading] = useState(false);
     const [authModal, setAuthModal] = useState(null);
     const [authForm, setAuthForm] = useState(EMPTY_AUTH);
     const [xlPreview, setXlPreview] = useState(null); // parsed rows before confirm
@@ -99,7 +101,7 @@ export function AdminPage({
     const handleLogin = async () => {
         setLoginError("");
         try {
-            const res = await fetch("http://localhost:3001/api/admin-login", {
+            const res = await fetch(`${API_BASE}/api/admin-login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ password: pw })
@@ -109,7 +111,7 @@ export function AdminPage({
                 localStorage.setItem("adminToken", data.token);
 
                 // Fetch the secure state that includes passwords
-                const secureRes = await fetch("http://localhost:3001/api/secure-state", {
+                const secureRes = await fetch(`${API_BASE}/api/secure-state`, {
                     headers: { "Authorization": `Bearer ${data.token}` }
                 });
                 const secureData = await secureRes.json();
@@ -132,7 +134,7 @@ export function AdminPage({
         setEmailStatus(s => ({ ...s, [statusKey]: "sending" }));
         try {
             const token = localStorage.getItem("adminToken");
-            const res = await fetch("http://localhost:3001/api/send-captain-email", {
+            const res = await fetch(`${API_BASE}/api/send-captain-email`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -168,7 +170,7 @@ export function AdminPage({
         setAnnouncementStatus("sending");
         try {
             const token = localStorage.getItem("adminToken");
-            const res = await fetch("http://localhost:3001/api/send-event-announcement", {
+            const res = await fetch(`${API_BASE}/api/send-event-announcement`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -511,7 +513,38 @@ export function AdminPage({
                                 <div style={{ color: dark ? "#666" : "#bbb", fontSize: 11, marginTop: 2 }}>JPG, PNG, GIF, WEBP</div>
                             </div>
                         )}
-                        <button onClick={() => { if (!galFile) return; setGallery(imgs => [...imgs, { ...galForm, src: galFile.src, id: Date.now(), label: galForm.label || galFile.name }]); setGalFile(null); setGalForm({ category: "current", label: "" }); }} disabled={!galFile} style={{ background: galFile ? "linear-gradient(135deg,#8B0000,#C41E3A)" : "#ccc", color: "#fff", border: "none", borderRadius: 50, padding: "11px 24px", cursor: galFile ? "pointer" : "not-allowed", fontWeight: 700, fontSize: 14 }}>➕ Add to Gallery</button>
+                        <button
+                            onClick={async () => {
+                                if (!galFile || galUploading) return;
+                                setGalUploading(true);
+                                try {
+                                    const token = localStorage.getItem("adminToken");
+                                    const res = await fetch(`${API_BASE}/api/upload-image`, {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                                        body: JSON.stringify({ data: galFile.src, folder: "acet-sports/gallery" }),
+                                    });
+                                    const result = await res.json();
+                                    if (!res.ok) throw new Error(result.error || "Upload failed");
+                                    // Store Cloudinary URL (not base64) — works on any device!
+                                    setGallery(imgs => [...imgs, { ...galForm, src: result.url, id: Date.now(), label: galForm.label || galFile.name }]);
+                                    setGalFile(null);
+                                    setGalForm({ category: "current", label: "" });
+                                } catch (e) {
+                                    alert("❌ Upload failed: " + e.message + "\n\nFallback: storing image locally (will only show on this device).");
+                                    // Fallback: store base64 if Cloudinary not configured
+                                    setGallery(imgs => [...imgs, { ...galForm, src: galFile.src, id: Date.now(), label: galForm.label || galFile.name }]);
+                                    setGalFile(null);
+                                    setGalForm({ category: "current", label: "" });
+                                } finally {
+                                    setGalUploading(false);
+                                }
+                            }}
+                            disabled={!galFile || galUploading}
+                            style={{ background: (galFile && !galUploading) ? "linear-gradient(135deg,#8B0000,#C41E3A)" : "#ccc", color: "#fff", border: "none", borderRadius: 50, padding: "11px 24px", cursor: (galFile && !galUploading) ? "pointer" : "not-allowed", fontWeight: 700, fontSize: 14 }}
+                        >
+                            {galUploading ? "⏳ Uploading to Cloud..." : "➕ Add to Gallery"}
+                        </button>
                     </div>
                     {["current", "previous"].map(cat => {
                         const imgs = gallery.filter(g => g.category === cat);
@@ -1189,7 +1222,7 @@ export function AdminPage({
                                 <h4 style={{ color: dark ? "#ccc" : "#444", margin: "0", fontSize: 14 }}>Email Server Status</h4>
                                 <button onClick={async () => {
                                     try {
-                                        const res = await fetch("http://localhost:3001/api/check-email-connection");
+                                        const res = await fetch(`${API_BASE}/api/check-email-connection`);
                                         const d = await res.json();
                                         alert(d.success ? "✅ Email connected successfully!" : `❌ Email Error: ${d.error}`);
                                     } catch (e) { alert("❌ Could not reach server. Is node running?"); }

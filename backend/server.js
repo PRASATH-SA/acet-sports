@@ -6,19 +6,34 @@ import jwt from "jsonwebtoken";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import mongoose from "mongoose";
+import compression from "compression";
+import { v2 as cloudinary } from "cloudinary";
+import path from "path";
+import { fileURLToPath } from "url";
 import State from "../models.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const app = express();
-app.use(helmet());
+app.use(compression()); // gzip all responses — reduces bandwidth by ~70%
+app.use(helmet({ contentSecurityPolicy: false })); // disable CSP so Cloudinary images load
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "20mb" })); // allow larger payloads for image base64
+
+// ─── Cloudinary Config ────────────────────────────────────────────────────────
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-key-change-in-production";
 
 // Rate Limiters
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // limit each IP to 200 requests per windowMs
+  max: 2000, // allow 2000 req per IP per 15 min — enough for 1000 active users
   message: { error: "Too many requests from this IP, please try again after 15 minutes" }
 });
 
@@ -32,6 +47,14 @@ app.use("/api/", globalLimiter);
 
 
 const otpStore = {}; // { [email]: { otp, expires } }
+
+// ─── In-Memory State Cache ─────────────────────────────────────────────────────
+// Cache the public state for 10 seconds so 1000 simultaneous page loads
+// don't all hammer MongoDB at exactly the same time.
+let stateCache = { data: null, ts: 0 };
+const CACHE_TTL_MS = 10 * 1000; // 10 seconds
+
+const invalidateCache = () => { stateCache = { data: null, ts: 0 }; };
 
 // ─── MongoDB Connection ───────────────────────────────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/achariya_sports";
@@ -119,6 +142,11 @@ const authenticateCaptainOrAdmin = (req, res, next) => {
 // ─── Health / config check ─────────────────────────────────────────────────
 app.get("/api/public-state", async (req, res) => {
   try {
+    // Serve from cache if fresh
+    if (stateCache.data && Date.now() - stateCache.ts < CACHE_TTL_MS) {
+      return res.json(stateCache.data);
+    }
+
     const state = await loadDb();
     // Strip passwords from houses before sending
     const sanitizedHouses = state.houses.map(h => {
@@ -129,7 +157,9 @@ app.get("/api/public-state", async (req, res) => {
       return hSafe;
     });
 
-    res.json({ ...state.toObject ? state.toObject() : state, houses: sanitizedHouses });
+    const result = { ...state.toObject ? state.toObject() : state, houses: sanitizedHouses };
+    stateCache = { data: result, ts: Date.now() }; // update cache
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: "Failed to load state" });
   }
@@ -160,6 +190,7 @@ app.post("/api/update-state", authenticateCaptainOrAdmin, async (req, res) => {
 
     // Atomic update in MongoDB
     await State.findOneAndUpdate({}, { [type]: data }, { upsert: true });
+    invalidateCache(); // clear state cache so next fetch gets fresh data
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to update state" });
@@ -494,5 +525,43 @@ app.post("/api/send-event-announcement", authenticateAdmin, async (req, res) => 
   }
 });
 
+// ─── Cloudinary Image Upload ──────────────────────────────────────────────────
+// Admin sends base64 image → we upload it to Cloudinary → return the CDN URL
+// This replaces storing large base64 strings in MongoDB.
+app.post("/api/upload-image", authenticateAdmin, async (req, res) => {
+  try {
+    const { data, folder = "acet-sports" } = req.body;
+    if (!data) return res.status(400).json({ error: "No image data provided" });
+
+    if (!process.env.CLOUDINARY_CLOUD_NAME) {
+      return res.status(503).json({ error: "Cloudinary not configured. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET to .env" });
+    }
+
+    const result = await cloudinary.uploader.upload(data, {
+      folder,
+      resource_type: "image",
+      // Auto-optimize quality and format for fastest loads
+      quality: "auto",
+      fetch_format: "auto",
+    });
+
+    res.json({ success: true, url: result.secure_url, publicId: result.public_id });
+  } catch (err) {
+    console.error("Cloudinary upload error:", err.message);
+    res.status(500).json({ error: "Image upload failed: " + err.message });
+  }
+});
+
+// ─── Serve Frontend (Production) ─────────────────────────────────────────────
+// In production, the backend also serves the Vite-built frontend.
+// This is what makes relative /api paths work — same origin, same server.
+const distPath = path.join(__dirname, "../dist");
+app.use(express.static(distPath));
+app.get("*", (req, res) => {
+  // Don't intercept API routes
+  if (req.path.startsWith("/api/")) return;
+  res.sendFile(path.join(distPath, "index.html"));
+});
+
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`🚀 Email server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));

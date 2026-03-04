@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useIsMobile, hi, tint, Count, Sheet } from "./utils.jsx";
+import { API_BASE } from "./api.js";
 export function RegistrationPage({ dark, registrations, setRegistrations, studentsDB, houses = [], sportGamesList = [], athleticsList = [] }) {
     const [input, setInput] = useState("");
     const [student, setStudent] = useState(null);
@@ -28,7 +29,7 @@ export function RegistrationPage({ dark, registrations, setRegistrations, studen
     const sendOtp = async () => {
         setError(""); setIsVerifying(true);
         try {
-            const res = await fetch("http://localhost:3001/api/send-otp", {
+            const res = await fetch(`${API_BASE}/api/send-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: student.email })
@@ -48,7 +49,7 @@ export function RegistrationPage({ dark, registrations, setRegistrations, studen
     const verifyOtp = async () => {
         setError(""); setIsVerifying(true);
         try {
-            const res = await fetch("http://localhost:3001/api/verify-otp", {
+            const res = await fetch(`${API_BASE}/api/verify-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: student.email, otp })

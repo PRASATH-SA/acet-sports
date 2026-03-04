@@ -30,8 +30,10 @@ export default function App() {
   const [eventDate, setEventDate] = useState({ date: "", time: "" });
   const [emptyGame, setEmptyGame] = useState({ name: "", type: "game", venue: "", official: "", status: "Upcoming", start: "", end: "", participants: "" });
 
+  const API_BASE = import.meta.env.VITE_API_URL || "";
+
   useEffect(() => {
-    fetch("http://localhost:3001/api/public-state")
+    fetch(`${API_BASE}/api/public-state`)
       .then(res => res.json())
       .then(data => {
         if (data.houses) setHouses(data.houses);
@@ -67,7 +69,7 @@ export default function App() {
     const captainToken = localStorage.getItem("captainToken");
     const token = adminToken || captainToken;
 
-    fetch("http://localhost:3001/api/update-state", {
+    fetch(`${API_BASE}/api/update-state`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

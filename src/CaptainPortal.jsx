@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useIsMobile, hi } from "./utils.jsx";
 import * as XLSX from "xlsx";
+import { API_BASE } from "./api.js";
 
 export function CaptainPortal({ dark, houses, registrations, studentsDB, setStudentsDB }) {
     const [email, setEmail] = useState("");
@@ -42,7 +43,7 @@ export function CaptainPortal({ dark, houses, registrations, studentsDB, setStud
         }
 
         try {
-            const res = await fetch("http://localhost:3001/api/captain-login", {
+            const res = await fetch(`${API_BASE}/api/captain-login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ house: targetHouse.id, password })
