@@ -7,6 +7,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import mongoose from "mongoose";
 import compression from "compression";
+import FormData from "form-data";
 import path from "path";
 import { fileURLToPath } from "url";
 import State from "../models.js";
@@ -22,7 +23,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-app.options("*", cors()); // Handle preflight requests for all routes
+app.options(/(.*)/, cors()); // Handle preflight requests for all routes
 app.use(express.json({ limit: "20mb" })); // allow larger payloads for image base64
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-key-change-in-production";
@@ -613,7 +614,8 @@ app.post("/api/upload-image", authenticateAdmin, async (req, res) => {
 
     const imgbbRes = await fetch("https://api.imgbb.com/1/upload", {
       method: "POST",
-      body: formData
+      body: formData,
+      // FormData automatically sets the right multipart headers when used with node-fetch / native fetch
     });
 
     const imgbbData = await imgbbRes.json();
@@ -660,7 +662,7 @@ app.get("/api/download-admin-logs", authenticateAdmin, async (req, res) => {
 // This is what makes relative /api paths work — same origin, same server.
 const distPath = path.join(__dirname, "../dist");
 app.use(express.static(distPath));
-app.get(/.*/, (req, res) => {
+app.get(/(.*)/, (req, res) => {
   // Don't intercept API routes
   if (req.path.startsWith("/api/")) return res.status(404).json({ error: "API endpoint not found" });
   res.sendFile(path.join(distPath, "index.html"));
